@@ -9,7 +9,7 @@ import asyncio
 from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime, date
 
-import pytds
+import pyodbc
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -30,15 +30,8 @@ class DatabaseService:
     def get_connection(self):
         """Get a database connection"""
         try:
-            conn = pytds.connect(
-                server=self.host,
-                port=self.port,
-                database=self.database,
-                user=self.user,
-                password=self.password,
-                timeout=30,
-                autocommit=True
-            )
+            connection_string = f"DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={self.host},{self.port};DATABASE={self.database};UID={self.user};PWD={self.password};Connection Timeout=30"
+            conn = pyodbc.connect(connection_string)
             return conn
         except Exception as e:
             log.error(f"Database connection failed: {e}")
