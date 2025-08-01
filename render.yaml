@@ -1,0 +1,86 @@
+services:
+  - type: web
+    name: jen-ai-assistant
+    runtime: python3
+    buildCommand: pip install -r requirements.txt
+    startCommand: python start.py
+    repo: https://github.com/jaredblank/jen-ai-assistant
+    branch: main
+    rootDir: .
+    region: oregon
+    plan: starter
+    numInstances: 1
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: HOST
+        value: 0.0.0.0
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      
+      # Database Configuration
+      - key: SQLSERVER_HOST
+        value: 104.42.175.206
+      - key: SQLSERVER_DB
+        value: Broker_Mgmt
+      - key: SQLSERVER_USER
+        value: Jared
+      - key: SQLSERVER_PASSWORD
+        sync: false
+      - key: SQLSERVER_PORT
+        value: 1433
+      
+      # AI Service Configuration
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_BASE_URL
+        value: https://openrouter.ai/api/v1
+      - key: OPENAI_MODEL
+        value: openai/gpt-4o-mini
+      
+      # ElevenLabs Voice Configuration
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: JEN_VOICE_ID
+        value: tnSpp4vdxKPjI9w0GnoV
+      - key: JEN_AGENT_ID
+        value: agent_6501k1bae0n2ebbs8dmvwgzjmbjy
+      - key: JEN_PHONE_NUMBER_SID
+        value: PNd7a8b8e2904cae40f0035b5c28e2dfbf
+      
+      # Twilio Configuration
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_PHONE_NUMBER
+        sync: false
+      
+      # Authentication
+      - key: JEN_API_KEY
+        value: JenAI2025
+      - key: API_SECRET_KEY
+        value: EquityRachel2025ChatAPI
+      
+      # Webhook Configuration
+      - key: JEN_WEBHOOK_URL
+        value: https://jen-ai.onrender.com/elevenlabs/webhook
+      
+      # Performance Settings
+      - key: MAX_WORKERS
+        value: 1
+      - key: TIMEOUT_SECONDS
+        value: 30
+      - key: CACHE_TTL_SECONDS
+        value: 300
+        
+      # CORS Settings
+      - key: ALLOWED_ORIGINS
+        value: "*"
+      - key: ALLOWED_METHODS
+        value: "GET,POST,PUT,DELETE,OPTIONS"
+      - key: ALLOWED_HEADERS
+        value: "*"
