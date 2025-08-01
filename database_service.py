@@ -19,10 +19,14 @@ class DatabaseService:
     """Database service for Jen AI Assistant"""
     
     def __init__(self):
-        self.host = os.getenv("SQLSERVER_HOST", "104.42.175.206")
-        self.database = os.getenv("SQLSERVER_DB", "Broker_Mgmt")
-        self.user = os.getenv("SQLSERVER_USER", "Jared")
-        self.password = os.getenv("SQLSERVER_PASSWORD", "N1ch0las1!")
+        # SECURITY: No default credentials - must be provided via environment
+        self.host = os.getenv("SQLSERVER_HOST")
+        self.database = os.getenv("SQLSERVER_DB")
+        self.user = os.getenv("SQLSERVER_USER")
+        self.password = os.getenv("SQLSERVER_PASSWORD")
+        
+        if not all([self.host, self.database, self.user, self.password]):
+            raise ValueError("Missing required database credentials in environment variables")
         self.port = int(os.getenv("SQLSERVER_PORT", "1433"))
         
         log.info(f"Database service initialized - Host: {self.host}, DB: {self.database}")
