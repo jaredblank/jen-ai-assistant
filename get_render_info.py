@@ -9,7 +9,7 @@ import json
 def get_render_account_info():
     """Get Render account information including owner ID"""
     
-    render_api_key = "rnd_1q6pIHjPfAZOd8MmgrpN36mVqPbn"
+    render_api_key = "YOUR_RENDER_API_KEY_HERE"
     
     headers = {
         "Authorization": f"Bearer {render_api_key}",

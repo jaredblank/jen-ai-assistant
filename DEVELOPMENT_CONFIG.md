@@ -23,7 +23,7 @@ This configuration uses **SANDBOX/DEVELOPMENT** credentials to prevent any impac
 ## 🚫 Production Systems Protected:
 - ❌ Production database `Broker_Mgmt` - NOT USED
 - ❌ Production ElevenLabs agent `agent_6501k1bae0n2ebbs8dmvwgzjmbjy` - NOT USED  
-- ❌ Production phone number SID `PNd7a8b8e2904cae40f0035b5c28e2dfbf` - NOT USED
+- ❌ Production phone number SID `YOUR_PHONE_NUMBER_SID_HERE` - NOT USED
 - ❌ Production Twilio credentials - NOT USED
 
 ## ✅ Safe for Testing:

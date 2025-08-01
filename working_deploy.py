@@ -18,7 +18,7 @@ def deploy_jen_ai():
     ==========================================
     """)
     
-    render_api_key = "rnd_1q6pIHjPfAZOd8MmgrpN36mVqPbn"
+    render_api_key = "YOUR_RENDER_API_KEY_HERE"
     
     # Correct Render API structure with serviceDetails wrapper
     service_data = {
@@ -43,22 +43,22 @@ def deploy_jen_ai():
                 {"key": "LOG_LEVEL", "value": "INFO"},
                 
                 # LIVE PRODUCTION DATABASE - Jared's Real Credentials
-                {"key": "SQLSERVER_HOST", "value": "104.42.175.206"},
+                {"key": "SQLSERVER_HOST", "value": "YOUR_DB_HOST_HERE"},
                 {"key": "SQLSERVER_DB", "value": "Broker_Mgmt"},
                 {"key": "SQLSERVER_USER", "value": "Jared"},
-                {"key": "SQLSERVER_PASSWORD", "value": "N1ch0las1!"},
+                {"key": "SQLSERVER_PASSWORD", "value": "YOUR_SECURE_PASSWORD_HERE"},
                 {"key": "SQLSERVER_PORT", "value": "1433"},
                 
                 # LIVE AI SERVICE - Jared's Real OpenRouter Credentials
-                {"key": "OPENAI_API_KEY", "value": "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"},
+                {"key": "OPENAI_API_KEY", "value": "YOUR_OPENROUTER_API_KEY_HERE"},
                 {"key": "OPENAI_BASE_URL", "value": "https://openrouter.ai/api/v1"},
                 {"key": "OPENAI_MODEL", "value": "openai/gpt-4o-mini"},
                 
                 # LIVE VOICE SERVICE - Jared's Real ElevenLabs Credentials
-                {"key": "ELEVENLABS_API_KEY", "value": "sk_beb548af5488bc5c3710ac163aa3b1f8a7974983b1e84c0f"},
+                {"key": "ELEVENLABS_API_KEY", "value": "YOUR_ELEVENLABS_API_KEY_HERE"},
                 {"key": "JEN_VOICE_ID", "value": "tnSpp4vdxKPjI9w0GnoV"},
                 {"key": "JEN_AGENT_ID", "value": "agent_6501k1bae0n2ebbs8dmvwgzjmbjy"},
-                {"key": "JEN_PHONE_NUMBER_SID", "value": "PNd7a8b8e2904cae40f0035b5c28e2dfbf"},
+                {"key": "JEN_PHONE_NUMBER_SID", "value": "YOUR_PHONE_NUMBER_SID_HERE"},
                 
                 # Authentication - Real API Keys
                 {"key": "JEN_API_KEY", "value": "JenAI2025"},
@@ -119,7 +119,7 @@ def deploy_jen_ai():
 def check_existing_service():
     """Check if service already exists"""
     
-    render_api_key = "rnd_1q6pIHjPfAZOd8MmgrpN36mVqPbn"
+    render_api_key = "YOUR_RENDER_API_KEY_HERE"
     headers = {"Authorization": f"Bearer {render_api_key}"}
     
     try:
@@ -148,7 +148,7 @@ def wait_for_deployment(service_id):
     print(f"\\n[DEPLOY] Waiting for deployment to complete...")
     print(f"[DEPLOY] Service ID: {service_id}")
     
-    render_api_key = "rnd_1q6pIHjPfAZOd8MmgrpN36mVqPbn"
+    render_api_key = "YOUR_RENDER_API_KEY_HERE"
     headers = {"Authorization": f"Bearer {render_api_key}"}
     
     for i in range(20):  # Wait up to 10 minutes

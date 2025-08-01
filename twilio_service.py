@@ -26,7 +26,7 @@ class TwilioService:
         self.account_sid = os.getenv("TWILIO_ACCOUNT_SID")
         self.auth_token = os.getenv("TWILIO_AUTH_TOKEN")
         self.phone_number = os.getenv("TWILIO_PHONE_NUMBER")
-        self.phone_number_sid = os.getenv("JEN_PHONE_NUMBER_SID", "PNd7a8b8e2904cae40f0035b5c28e2dfbf")
+        self.phone_number_sid = os.getenv("JEN_PHONE_NUMBER_SID", "")
         
         self.client = None
         if TWILIO_AVAILABLE and self.account_sid and self.auth_token:

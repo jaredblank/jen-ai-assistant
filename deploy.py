@@ -205,7 +205,7 @@ Set these in Render Dashboard:
 
 ```
 # Database
-SQLSERVER_HOST=104.42.175.206
+SQLSERVER_HOST=YOUR_DB_HOST_HERE
 SQLSERVER_DB=Broker_Mgmt
 SQLSERVER_USER=Jared
 SQLSERVER_PASSWORD=[from credentials.md]

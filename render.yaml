@@ -23,7 +23,7 @@ services:
       
       # Database Configuration
       - key: SQLSERVER_HOST
-        value: 104.42.175.206
+        value: YOUR_DB_HOST_HERE
       - key: SQLSERVER_DB
         value: Broker_Mgmt
       - key: SQLSERVER_USER
@@ -49,7 +49,7 @@ services:
       - key: JEN_AGENT_ID
         value: agent_6501k1bae0n2ebbs8dmvwgzjmbjy
       - key: JEN_PHONE_NUMBER_SID
-        value: PNd7a8b8e2904cae40f0035b5c28e2dfbf
+        value: YOUR_PHONE_NUMBER_SID_HERE
       
       # Twilio Configuration
       - key: TWILIO_ACCOUNT_SID

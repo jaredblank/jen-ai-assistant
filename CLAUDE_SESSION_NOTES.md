@@ -73,7 +73,7 @@ Execute the manual deployment using `DEPLOY_NOW_MANUAL.md`:
 
 ### **🏗️ Enterprise Architecture:**
 - **FastAPI** web framework with async support
-- **SQL Server** live database integration (104.42.175.206)
+- **SQL Server** live database integration (YOUR_DB_HOST_HERE)
 - **OpenRouter GPT-4** for natural language processing
 - **ElevenLabs** voice processing and phone integration
 - **Twilio** phone system integration
@@ -92,7 +92,7 @@ Execute the manual deployment using `DEPLOY_NOW_MANUAL.md`:
 ## **CREDENTIALS STATUS:**
 
 ### **✅ ALL REAL CREDENTIALS CONFIGURED:**
-- **Database:** Jared's SQL Server (104.42.175.206, Broker_Mgmt)
+- **Database:** Jared's SQL Server (YOUR_DB_HOST_HERE, Broker_Mgmt)
 - **AI Service:** Jared's OpenRouter API key
 - **Voice Service:** Jared's ElevenLabs API key and Jen voice ID
 - **Authentication:** Production API keys
