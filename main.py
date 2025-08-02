@@ -430,7 +430,7 @@ async def chatbase_query(agent_id: str, user_type: str, question: str):
             }
         
         # Execute the query
-        query_result = await db_service.execute_query(sql_query, user_type, agent_id)
+        query_result = await db_service.execute_query(sql_query, [agent_id])
         
         # Generate natural language response
         response_text = ai_service.generate_response(
