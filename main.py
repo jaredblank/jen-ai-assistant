@@ -697,24 +697,53 @@ async def twilio_health():
 async def debug_test_query():
     """Debug endpoint to test individual components"""
     try:
+        # First, let's find what users actually exist
+        try:
+            sample_users_query = """
+            SELECT TOP 5 
+                u.USER_ID,
+                d.F_NAME + ' ' + d.L_NAME as full_name,
+                u.UTYPE_ID,
+                CASE 
+                    WHEN u.UTYPE_ID = 14 THEN 'agent'
+                    WHEN u.UTYPE_ID IN (15, 16) THEN 'broker'
+                    ELSE 'user'
+                END as user_type
+            FROM TBL_USER_CREATE u
+            INNER JOIN TBL_USER_DETAILS d ON u.USER_ID = d.USER_ID
+            WHERE u.USTATUS = 1
+              AND u.UTYPE_ID = 14
+            ORDER BY u.USER_ID
+            """
+            sample_users = await db_service.execute_query(sample_users_query)
+            
+            if not sample_users:
+                return {"error": "No active agents found in database", "step": "user_discovery"}
+            
+            # Use the first available agent
+            first_agent = str(sample_users[0]["USER_ID"])
+            
+        except Exception as e:
+            return {"error": f"Failed to find sample users: {str(e)}", "step": "user_discovery"}
+        
         # Test 1: Database user lookup
-        user_info = await db_service.get_user_info("130201")
+        user_info = await db_service.get_user_info(first_agent)
         if not user_info:
-            return {"error": "User 130201 not found in database", "step": "user_lookup"}
+            return {"error": f"User {first_agent} not found in database", "step": "user_lookup", "available_users": sample_users}
         
         # Test 2: AI service SQL generation
         question = "What is my total income this year?"
         sql_query = await ai_service.generate_sql_query(
             question=question,
             user_type="agent",
-            user_id="130201"
+            user_id=first_agent
         )
         if not sql_query:
             return {"error": "SQL generation failed", "step": "sql_generation", "user_info": user_info}
         
         # Test 3: Database query execution
         try:
-            query_result = await db_service.execute_query(sql_query, ["130201"])
+            query_result = await db_service.execute_query(sql_query, [first_agent])
         except Exception as e:
             return {
                 "error": f"Database query failed: {str(e)}", 
