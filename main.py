@@ -698,23 +698,23 @@ async def debug_test_query():
     """Debug endpoint to test individual components"""
     try:
         # Test 1: Database user lookup
-        user_info = await db_service.get_user_info("121901")
+        user_info = await db_service.get_user_info("130201")
         if not user_info:
-            return {"error": "User 121901 not found in database", "step": "user_lookup"}
+            return {"error": "User 130201 not found in database", "step": "user_lookup"}
         
         # Test 2: AI service SQL generation
         question = "What is my total income this year?"
         sql_query = await ai_service.generate_sql_query(
             question=question,
             user_type="agent",
-            user_id="121901"
+            user_id="130201"
         )
         if not sql_query:
             return {"error": "SQL generation failed", "step": "sql_generation", "user_info": user_info}
         
         # Test 3: Database query execution
         try:
-            query_result = await db_service.execute_query(sql_query, ["121901"])
+            query_result = await db_service.execute_query(sql_query, ["130201"])
         except Exception as e:
             return {
                 "error": f"Database query failed: {str(e)}", 
