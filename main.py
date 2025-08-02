@@ -412,7 +412,7 @@ async def chatbase_query(agent_id: str, user_type: str, question: str):
         
         # Process the query through our existing text query logic
         # Look up user information
-        user_info = await db_service.get_user_by_id(agent_id)
+        user_info = await db_service.get_user_info(agent_id)
         if not user_info:
             return {
                 "success": False,
