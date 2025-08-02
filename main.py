@@ -720,8 +720,8 @@ async def debug_test_query():
             if not sample_users:
                 return {"error": "No active agents found in database", "step": "user_discovery"}
             
-            # Use the first available agent
-            first_agent = str(int(sample_users[0]["USER_ID"]))
+            # Use the second available agent (skip company entity)
+            first_agent = str(int(sample_users[1]["USER_ID"]))
             
         except Exception as e:
             return {"error": f"Failed to find sample users: {str(e)}", "step": "user_discovery"}
