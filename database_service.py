@@ -166,7 +166,7 @@ class DatabaseService:
                 u.USTATUS
             FROM TBL_USER_CREATE u
             INNER JOIN TBL_USER_DETAILS d ON u.USER_ID = d.USER_ID
-            WHERE u.USER_ID = %s
+            WHERE u.USER_ID = ?
               AND u.USTATUS = 1
             """
             
@@ -209,14 +209,14 @@ class DatabaseService:
             INNER JOIN TBL_USER_DETAILS d ON u.USER_ID = d.USER_ID
             WHERE u.USTATUS = 1
               AND (
-                LOWER(d.F_NAME + ' ' + d.L_NAME) LIKE LOWER(%s)
-                OR LOWER(d.F_NAME) LIKE LOWER(%s)
-                OR LOWER(d.L_NAME) LIKE LOWER(%s)
+                LOWER(d.F_NAME + ' ' + d.L_NAME) LIKE LOWER(?)
+                OR LOWER(d.F_NAME) LIKE LOWER(?)
+                OR LOWER(d.L_NAME) LIKE LOWER(?)
               )
             ORDER BY 
                 CASE 
-                    WHEN LOWER(d.F_NAME + ' ' + d.L_NAME) = LOWER(%s) THEN 1
-                    WHEN LOWER(d.F_NAME + ' ' + d.L_NAME) LIKE LOWER(%s) THEN 2
+                    WHEN LOWER(d.F_NAME + ' ' + d.L_NAME) = LOWER(?) THEN 1
+                    WHEN LOWER(d.F_NAME + ' ' + d.L_NAME) LIKE LOWER(?) THEN 2
                     ELSE 3
                 END
             """
