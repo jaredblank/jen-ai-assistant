@@ -721,7 +721,7 @@ async def debug_test_query():
                 return {"error": "No active agents found in database", "step": "user_discovery"}
             
             # Use the first available agent
-            first_agent = str(sample_users[0]["USER_ID"])
+            first_agent = str(int(sample_users[0]["USER_ID"]))
             
         except Exception as e:
             return {"error": f"Failed to find sample users: {str(e)}", "step": "user_discovery"}
