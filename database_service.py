@@ -9,7 +9,7 @@ import asyncio
 from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime, date
 
-import pyodbc
+import pymssql
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -34,8 +34,15 @@ class DatabaseService:
     def get_connection(self):
         """Get a database connection"""
         try:
-            connection_string = f"DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={self.host},{self.port};DATABASE={self.database};UID={self.user};PWD={self.password};Connection Timeout=30"
-            conn = pyodbc.connect(connection_string)
+            conn = pymssql.connect(
+                server=self.host,
+                port=self.port,
+                user=self.user,
+                password=self.password,
+                database=self.database,
+                timeout=30,
+                login_timeout=30
+            )
             return conn
         except Exception as e:
             log.error(f"Database connection failed: {e}")
@@ -118,8 +125,8 @@ class DatabaseService:
                 FROM TBL_USER_CREATE u
                 WHERE u.User_Status = 'A' 
                 AND (
-                    REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(u.User_Phone, '+', ''), '-', ''), ' ', ''), '(', ''), ')', '') LIKE '%' + ? + '%'
-                    OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(u.User_Cell, '+', ''), '-', ''), ' ', ''), '(', ''), ')', '') LIKE '%' + ? + '%'
+                    REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(u.User_Phone, '+', ''), '-', ''), ' ', ''), '(', ''), ')', '') LIKE '%' + %s + '%'
+                    OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(u.User_Cell, '+', ''), '-', ''), ' ', ''), '(', ''), ')', '') LIKE '%' + %s + '%'
                 )
             """
             
@@ -166,7 +173,7 @@ class DatabaseService:
                 u.USTATUS
             FROM TBL_USER_CREATE u
             INNER JOIN TBL_USER_DETAILS d ON u.USER_ID = d.USER_ID
-            WHERE u.USER_ID = ?
+            WHERE u.USER_ID = %s
               AND u.USTATUS = 1
             """
             
@@ -209,14 +216,14 @@ class DatabaseService:
             INNER JOIN TBL_USER_DETAILS d ON u.USER_ID = d.USER_ID
             WHERE u.USTATUS = 1
               AND (
-                LOWER(d.F_NAME + ' ' + d.L_NAME) LIKE LOWER(?)
-                OR LOWER(d.F_NAME) LIKE LOWER(?)
-                OR LOWER(d.L_NAME) LIKE LOWER(?)
+                LOWER(d.F_NAME + ' ' + d.L_NAME) LIKE LOWER(%s)
+                OR LOWER(d.F_NAME) LIKE LOWER(%s)
+                OR LOWER(d.L_NAME) LIKE LOWER(%s)
               )
             ORDER BY 
                 CASE 
-                    WHEN LOWER(d.F_NAME + ' ' + d.L_NAME) = LOWER(?) THEN 1
-                    WHEN LOWER(d.F_NAME + ' ' + d.L_NAME) LIKE LOWER(?) THEN 2
+                    WHEN LOWER(d.F_NAME + ' ' + d.L_NAME) = LOWER(%s) THEN 1
+                    WHEN LOWER(d.F_NAME + ' ' + d.L_NAME) LIKE LOWER(%s) THEN 2
                     ELSE 3
                 END
             """

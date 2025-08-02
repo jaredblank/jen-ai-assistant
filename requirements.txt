@@ -4,7 +4,7 @@ fastapi==0.104.1
 uvicorn[standard]==0.24.0
 
 # Database connectivity
-pyodbc==4.0.39
+pymssql==2.2.8
 
 # AI and HTTP requests
 requests==2.31.0
