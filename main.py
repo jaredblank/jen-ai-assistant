@@ -377,13 +377,19 @@ async def twilio_voice_webhook(request: Request):
         except Exception as e:
             log.warning(f"Could not identify caller {from_number}: {e}")
         
-        # Create ElevenLabs redirect URL with caller context
-        elevenlabs_url = f"https://api.us.elevenlabs.io/twilio/inbound_call?caller_name={caller_name.replace(' ', '+')}&caller_id={caller_id or 'unknown'}"
+        # For now, use working TwiML with speech recognition
+        # TODO: Set up ElevenLabs phone number registration for direct redirect
+        greeting = f"Hi! I'm Jen, your AI assistant for real estate data. "
+        if caller_name != "Real Estate Agent":
+            greeting += f"Hello {caller_name}! "
+        greeting += "I can help you with questions about your income, deals, and performance. What would you like to know?"
         
-        # Return TwiML redirect to ElevenLabs (same pattern as Rachel)
         twiml_response = f'''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Redirect method="POST">{elevenlabs_url}</Redirect>
+    <Gather action="/twilio/process-speech" input="speech" method="POST" speechTimeout="auto" timeout="10">
+        <Say voice="Polly.Joanna-Neural">{greeting}</Say>
+    </Gather>
+    <Say>I didn't hear anything. Please call back when you're ready to ask a question.</Say>
 </Response>'''
         
         return PlainTextResponse(twiml_response, media_type="application/xml")
@@ -391,10 +397,100 @@ async def twilio_voice_webhook(request: Request):
     except Exception as e:
         log.error(f"Twilio voice webhook error: {e}")
         
-        # Fallback: redirect to ElevenLabs without caller identification  
+        # Fallback TwiML  
         fallback_twiml = '''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Redirect method="POST">https://api.us.elevenlabs.io/twilio/inbound_call</Redirect>
+    <Say voice="Polly.Joanna-Neural">Sorry, I'm experiencing technical difficulties. Please try again later.</Say>
+</Response>'''
+        return PlainTextResponse(fallback_twiml, media_type="application/xml")
+
+@app.post("/twilio/process-speech")
+async def twilio_process_speech(request: Request):
+    """Process speech input from Twilio Gather"""
+    try:
+        form_data = await request.form()
+        speech_result = form_data.get("SpeechResult", "")
+        call_sid = form_data.get("CallSid", "")
+        from_number = form_data.get("From", "")
+        
+        log.info(f"Speech processing - CallSid: {call_sid}, From: {from_number}, Speech: {speech_result}")
+        
+        if not speech_result:
+            # No speech detected
+            twiml_response = '''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say voice="Polly.Joanna-Neural">I didn't hear anything. Please call back when you're ready to ask a question.</Say>
+</Response>'''
+            return PlainTextResponse(twiml_response, media_type="application/xml")
+        
+        # Try to identify the user from their voice input or phone number
+        user_id = None
+        caller_name = "Real Estate Agent"
+        
+        # Check if user provided agent ID in speech
+        if "agent id" in speech_result.lower() or "my id" in speech_result.lower():
+            import re
+            id_match = re.search(r'\b(\d{6})\b', speech_result)
+            if id_match:
+                user_id = id_match.group(1)
+                log.info(f"Extracted user ID from speech: {user_id}")
+        
+        # If no ID in speech, try phone lookup
+        if not user_id:
+            try:
+                user_info = await db_service.get_user_by_phone(from_number.replace("+1", "").replace("-", "").replace(" ", ""))
+                if user_info:
+                    user_id = str(user_info.get("id", ""))
+                    caller_name = user_info.get("name", "Real Estate Agent")
+            except:
+                pass
+        
+        if not user_id:
+            # Ask for agent ID
+            twiml_response = '''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Gather action="/twilio/process-speech" input="speech" method="POST" speechTimeout="auto" timeout="10">
+        <Say voice="Polly.Joanna-Neural">I'd be happy to help! Please tell me your agent ID so I can access your data.</Say>
+    </Gather>
+    <Say>Please call back and provide your agent ID.</Say>
+</Response>'''
+            return PlainTextResponse(twiml_response, media_type="application/xml")
+        
+        # Process the business query
+        try:
+            result = await process_business_query(
+                question=speech_result,
+                user_id=user_id,
+                user_type="agent",
+                user_name=caller_name
+            )
+            
+            response_text = result.get("response", "I'm sorry, I couldn't process your request.")
+            
+            # Return the response via voice
+            twiml_response = f'''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say voice="Polly.Joanna-Neural">{response_text}</Say>
+    <Gather action="/twilio/process-speech" input="speech" method="POST" speechTimeout="auto" timeout="10">
+        <Say voice="Polly.Joanna-Neural">Do you have any other questions?</Say>
+    </Gather>
+    <Say>Thank you for calling Jen AI Assistant. Have a great day!</Say>
+</Response>'''
+            
+        except Exception as e:
+            log.error(f"Query processing failed: {e}")
+            twiml_response = '''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say voice="Polly.Joanna-Neural">I'm sorry, I'm having trouble accessing the database right now. Please try again later.</Say>
+</Response>'''
+        
+        return PlainTextResponse(twiml_response, media_type="application/xml")
+        
+    except Exception as e:
+        log.error(f"Speech processing error: {e}")
+        fallback_twiml = '''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say voice="Polly.Joanna-Neural">Sorry, I'm having trouble processing your request. Please try again.</Say>
 </Response>'''
         return PlainTextResponse(fallback_twiml, media_type="application/xml")
 
