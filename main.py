@@ -704,6 +704,35 @@ async def debug_test_user_types():
             {"user_id": "121901", "expected_type": "admin", "description": "Admin test"}
         ]
         
+        # First, let's check what UTYPE_IDs these users actually have
+        utype_debug = []
+        for test_user in test_users:
+            try:
+                utype_query = """
+                SELECT 
+                    u.USER_ID,
+                    u.UTYPE_ID,
+                    d.F_NAME + ' ' + d.L_NAME as full_name,
+                    u.USTATUS
+                FROM TBL_USER_CREATE u
+                INNER JOIN TBL_USER_DETAILS d ON u.USER_ID = d.USER_ID
+                WHERE u.USER_ID = %s
+                """
+                utype_result = await db_service.execute_query(utype_query, [test_user["user_id"]])
+                if utype_result:
+                    utype_debug.append({
+                        "user_id": test_user["user_id"],
+                        "expected_type": test_user["expected_type"],
+                        "actual_utype_id": utype_result[0]["UTYPE_ID"],
+                        "name": utype_result[0]["full_name"],
+                        "status": utype_result[0]["USTATUS"]
+                    })
+            except Exception as e:
+                utype_debug.append({
+                    "user_id": test_user["user_id"],
+                    "error": str(e)
+                })
+        
         results = []
         
         for test_user in test_users:
@@ -773,6 +802,7 @@ async def debug_test_user_types():
         
         return {
             "success": True,
+            "utype_analysis": utype_debug,
             "test_results": results,
             "summary": {
                 "total_tests": len(test_users),
