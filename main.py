@@ -349,6 +349,59 @@ async def analytics_dashboard():
         raise HTTPException(status_code=500, detail=str(e))
 
 # ============================================================================
+# ELEVENLABS CONVERSATION INITIATION WEBHOOK
+# ============================================================================
+
+@app.post("/api/chatbase/twilio-personalization")
+async def elevenlabs_conversation_initiation(request: Request):
+    """ElevenLabs conversation initiation webhook for caller identification"""
+    try:
+        webhook_data = await request.json()
+        caller_phone = webhook_data.get("caller_id", "").replace("+1", "").replace("-", "").replace(" ", "")
+        
+        log.info(f"ElevenLabs conversation initiation - caller: {caller_phone}")
+        
+        # Look up caller in database
+        try:
+            user_info = await db_service.get_user_by_phone(caller_phone)
+            if user_info:
+                response_data = {
+                    "caller_name": user_info.get("name", "Real Estate Agent"),
+                    "caller_id": str(user_info.get("id", "")),
+                    "caller_phone": caller_phone,
+                    "agent_found": "true"
+                }
+                log.info(f"Caller identified: {response_data['caller_name']} (ID: {response_data['caller_id']})")
+            else:
+                response_data = {
+                    "caller_name": "Real Estate Agent",
+                    "caller_id": "unknown",
+                    "caller_phone": caller_phone,
+                    "agent_found": "false"
+                }
+                log.info(f"Caller not found in database: {caller_phone}")
+                
+        except Exception as e:
+            log.error(f"Database lookup failed for {caller_phone}: {e}")
+            response_data = {
+                "caller_name": "Real Estate Agent",
+                "caller_id": "unknown", 
+                "caller_phone": caller_phone,
+                "agent_found": "false"
+            }
+        
+        return response_data
+        
+    except Exception as e:
+        log.error(f"Conversation initiation webhook error: {e}")
+        return {
+            "caller_name": "Real Estate Agent",
+            "caller_id": "unknown",
+            "caller_phone": "unknown",
+            "agent_found": "false"
+        }
+
+# ============================================================================
 # TWILIO INTEGRATION ENDPOINTS
 # ============================================================================
 
