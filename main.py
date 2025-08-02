@@ -726,10 +726,47 @@ async def debug_test_query():
         except Exception as e:
             return {"error": f"Failed to find sample users: {str(e)}", "step": "user_discovery"}
         
-        # Test 1: Database user lookup
+        # Test 1: Database user lookup - test the exact query from get_user_info
+        try:
+            test_query = """
+            SELECT 
+                u.USER_ID,
+                d.F_NAME,
+                d.L_NAME,
+                d.F_NAME + ' ' + d.L_NAME as full_name,
+                u.UTYPE_ID,
+                CASE 
+                    WHEN u.UTYPE_ID = 14 THEN 'agent'
+                    WHEN u.UTYPE_ID IN (15, 16) THEN 'broker'
+                    ELSE 'user'
+                END as user_type,
+                d.JOINED_DT,
+                u.USTATUS
+            FROM TBL_USER_CREATE u
+            INNER JOIN TBL_USER_DETAILS d ON u.USER_ID = d.USER_ID
+            WHERE u.USER_ID = %s
+              AND u.USTATUS = 1
+            """
+            direct_result = await db_service.execute_query(test_query, [first_agent])
+            
+            if not direct_result:
+                return {
+                    "error": f"User {first_agent} not found in TBL_USER_DETAILS join", 
+                    "step": "user_lookup_direct",
+                    "available_users": sample_users,
+                    "tested_user_id": first_agent
+                }
+            
+        except Exception as e:
+            return {
+                "error": f"Direct query failed: {str(e)}", 
+                "step": "user_lookup_direct_query",
+                "tested_user_id": first_agent
+            }
+        
         user_info = await db_service.get_user_info(first_agent)
         if not user_info:
-            return {"error": f"User {first_agent} not found in database", "step": "user_lookup", "available_users": sample_users}
+            return {"error": f"User {first_agent} not found via get_user_info", "step": "user_lookup", "available_users": sample_users, "direct_result": direct_result}
         
         # Test 2: AI service SQL generation
         question = "What is my total income this year?"
