@@ -167,6 +167,8 @@ class DatabaseService:
                 CASE 
                     WHEN u.UTYPE_ID = 14 THEN 'agent'
                     WHEN u.UTYPE_ID IN (15, 16) THEN 'broker'
+                    WHEN u.UTYPE_ID = 12 THEN 'managingbroker'
+                    WHEN u.UTYPE_ID = 1 THEN 'admin'
                     ELSE 'user'
                 END as user_type,
                 d.JOINED_DT,
