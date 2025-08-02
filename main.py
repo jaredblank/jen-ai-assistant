@@ -693,6 +693,101 @@ async def twilio_health():
         "phone_number_sid": twilio_service.phone_number_sid
     }
 
+@app.post("/debug/test-user-types")
+async def debug_test_user_types():
+    """Debug endpoint to test specific user types with known IDs"""
+    try:
+        # Test users with known data
+        test_users = [
+            {"user_id": "129814", "expected_type": "agent", "description": "Agent test"},
+            {"user_id": "11333", "expected_type": "managingbroker", "description": "Managing Broker test"},
+            {"user_id": "121901", "expected_type": "admin", "description": "Admin test"}
+        ]
+        
+        results = []
+        
+        for test_user in test_users:
+            user_id = test_user["user_id"]
+            result = {"user_id": user_id, "description": test_user["description"]}
+            
+            try:
+                # Test user lookup
+                user_info = await db_service.get_user_info(user_id)
+                if not user_info:
+                    result["error"] = f"User {user_id} not found"
+                    result["status"] = "failed"
+                    results.append(result)
+                    continue
+                
+                result["user_info"] = user_info
+                result["actual_type"] = user_info.get("user_type", "unknown")
+                
+                # Test a simple query appropriate for each user type
+                if user_info.get("user_type") == "agent":
+                    question = "What is my total income this year?"
+                elif user_info.get("user_type") in ["broker", "managingbroker"]:
+                    question = "How many agents are in my team?"
+                else:
+                    question = "Show me system statistics"
+                
+                # Generate SQL query
+                sql_query = await ai_service.generate_sql_query(
+                    question=question,
+                    user_type=user_info.get("user_type", "agent"),
+                    user_id=user_id
+                )
+                
+                if not sql_query:
+                    result["error"] = "SQL generation failed"
+                    result["status"] = "failed"
+                    results.append(result)
+                    continue
+                
+                result["sql_query"] = sql_query
+                result["test_question"] = question
+                
+                # Execute query
+                query_result = await db_service.execute_query(sql_query, [user_id])
+                result["query_result"] = query_result
+                result["data_count"] = len(query_result) if query_result else 0
+                
+                # Generate response
+                response_text = ai_service.generate_response(
+                    question=question,
+                    data=query_result,
+                    user_name=user_info.get("name", "User"),
+                    user_type=user_info.get("user_type", "agent")
+                )
+                
+                result["response"] = response_text
+                result["status"] = "success"
+                
+            except Exception as e:
+                result["error"] = str(e)
+                result["status"] = "failed"
+            
+            results.append(result)
+        
+        # Summary
+        success_count = sum(1 for r in results if r.get("status") == "success")
+        
+        return {
+            "success": True,
+            "test_results": results,
+            "summary": {
+                "total_tests": len(test_users),
+                "successful": success_count,
+                "failed": len(test_users) - success_count
+            }
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Debug test failed: {str(e)}",
+            "exception_type": type(e).__name__
+        }
+
 @app.post("/debug/test-query")
 async def debug_test_query():
     """Debug endpoint to test individual components"""
