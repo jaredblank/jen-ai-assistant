@@ -693,6 +693,69 @@ async def twilio_health():
         "phone_number_sid": twilio_service.phone_number_sid
     }
 
+@app.post("/debug/test-query")
+async def debug_test_query():
+    """Debug endpoint to test individual components"""
+    try:
+        # Test 1: Database user lookup
+        user_info = await db_service.get_user_info("121901")
+        if not user_info:
+            return {"error": "User 121901 not found in database", "step": "user_lookup"}
+        
+        # Test 2: AI service SQL generation
+        question = "What is my total income this year?"
+        sql_query = await ai_service.generate_sql_query(
+            question=question,
+            user_type="agent",
+            user_id="121901"
+        )
+        if not sql_query:
+            return {"error": "SQL generation failed", "step": "sql_generation", "user_info": user_info}
+        
+        # Test 3: Database query execution
+        try:
+            query_result = await db_service.execute_query(sql_query, ["121901"])
+        except Exception as e:
+            return {
+                "error": f"Database query failed: {str(e)}", 
+                "step": "query_execution", 
+                "sql": sql_query,
+                "user_info": user_info
+            }
+        
+        # Test 4: Response generation
+        try:
+            response_text = ai_service.generate_response(
+                question=question,
+                data=query_result,
+                user_name=user_info["name"],
+                user_type="agent"
+            )
+        except Exception as e:
+            return {
+                "error": f"Response generation failed: {str(e)}", 
+                "step": "response_generation",
+                "query_result": query_result,
+                "user_info": user_info
+            }
+        
+        # Success - return all data
+        return {
+            "success": True,
+            "user_info": user_info,
+            "sql_query": sql_query,
+            "query_result": query_result,
+            "response_text": response_text,
+            "all_steps_passed": True
+        }
+        
+    except Exception as e:
+        return {
+            "error": f"Debug test failed: {str(e)}", 
+            "step": "unknown",
+            "exception_type": type(e).__name__
+        }
+
 if __name__ == "__main__":
     import uvicorn
     
