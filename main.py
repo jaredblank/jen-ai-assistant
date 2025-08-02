@@ -401,6 +401,65 @@ async def elevenlabs_conversation_initiation(request: Request):
             "agent_found": "false"
         }
 
+@app.get("/api/chatbase/query")
+async def chatbase_query(agent_id: str, user_type: str, question: str):
+    """
+    ElevenLabs webhook endpoint for agent data queries
+    This matches the format expected by the ElevenLabs agent configuration
+    """
+    try:
+        log.info(f"Chatbase query - agent_id: {agent_id}, user_type: {user_type}, question: {question}")
+        
+        # Process the query through our existing text query logic
+        # Look up user information
+        user_info = await db_service.get_user_by_id(agent_id)
+        if not user_info:
+            return {
+                "success": False,
+                "message": "User not found",
+                "response": "I couldn't find your information in the system."
+            }
+        
+        # Generate SQL query from the natural language question
+        sql_query = await ai_service.generate_sql_query(question, user_type, agent_id)
+        if not sql_query:
+            return {
+                "success": False,
+                "message": "Could not understand the question",
+                "response": "I'm sorry, I couldn't understand your question. Could you try rephrasing it?"
+            }
+        
+        # Execute the query
+        query_result = await db_service.execute_query(sql_query, user_type, agent_id)
+        
+        # Generate natural language response
+        response_text = ai_service.generate_response(
+            question,
+            query_result,
+            user_info.get("name", "Agent"),
+            user_type
+        )
+        
+        # Return in the format expected by ElevenLabs
+        return {
+            "success": True,
+            "response": response_text,
+            "data": query_result,
+            "user": {
+                "user_id": user_info.get("id"),
+                "name": user_info.get("name"),
+                "user_type": user_type
+            }
+        }
+        
+    except Exception as e:
+        log.error(f"Chatbase query error: {e}")
+        return {
+            "success": False,
+            "message": str(e),
+            "response": "I'm experiencing technical difficulties. Please try again later."
+        }
+
 # ============================================================================
 # TWILIO INTEGRATION ENDPOINTS
 # ============================================================================
