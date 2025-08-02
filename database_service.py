@@ -68,7 +68,7 @@ class DatabaseService:
             cursor = conn.cursor()
             
             if params:
-                cursor.execute(sql, params)
+                cursor.execute(sql, tuple(params))
             else:
                 cursor.execute(sql)
             
