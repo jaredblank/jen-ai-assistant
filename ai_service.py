@@ -85,7 +85,7 @@ Database Schema:
 - TBL_USER_CREATE: User accounts table
   - USER_ID: Primary key (int)
   - USTATUS: Active status (1=active, 0=inactive)
-  - UTYPE_ID: User type (14=agent, 15=broker, 16=designated broker)
+  - UTYPE_ID: User type (1=admin, 12=managingbroker, 14=agent, 15=broker, 16=designated broker)
 
 - TBL_USER_DETAILS: User profile information  
   - USER_ID: Links to TBL_USER_CREATE (int)
@@ -104,12 +104,13 @@ Current Context:
 
 Instructions:
 1. Use %s for ALL parameters (user_id, dates, etc.)
-2. Always filter by USER_ID = %s for agent queries
-3. For brokers, filter by EQUITY_DIVISION_25_ID = %s  
-4. Only include real transactions: WHERE (BuyerID > 0 OR ListingID > 0)
-5. Return ONLY the SQL query, no explanations
-6. Use appropriate date filtering for "this year", "last month", etc.
-7. For "who" questions, JOIN with TBL_USER_DETAILS for names
+2. For agents: Always filter by USER_ID = %s 
+3. For brokers/managingbrokers: Filter by EQUITY_DIVISION_25_ID = %s to see their team data
+4. For admins: Can query across all users - no USER_ID filter required
+5. Only include real transactions: WHERE (BuyerID > 0 OR ListingID > 0)
+6. Return ONLY the SQL query, no explanations
+7. Use appropriate date filtering for "this year", "last month", etc.
+8. For "who" questions, JOIN with TBL_USER_DETAILS for names
 
 SQL Query:"""
     
@@ -273,8 +274,8 @@ SQL Query:"""
               AND SalesPrice > 0;
             """
         
-        # Broker queries
-        if user_type == "broker":
+        # Broker and Managing Broker queries
+        if user_type in ["broker", "managingbroker"]:
             if "how many agents" in q:
                 return """
                 SELECT COUNT(DISTINCT u.USER_ID) as agent_count
@@ -284,6 +285,31 @@ SQL Query:"""
                   AND u.USTATUS = 1
                   AND u.STATUS_ID NOT IN (2, 11)
                   AND u.UTYPE_ID = 14;
+                """
+            if "total income" in q or "how much" in q:
+                return """
+                SELECT SUM(NET_COMMISSION) as total_income
+                FROM payroll_Queue_Archive 
+                WHERE EQUITY_DIVISION_25_ID = %s
+                  AND YEAR(Wire_Date) = YEAR(GETDATE())
+                  AND (BuyerID > 0 OR ListingID > 0);
+                """
+        
+        # Admin queries - can see system-wide statistics
+        if user_type == "admin":
+            if "total income" in q or "system" in q:
+                return """
+                SELECT SUM(NET_COMMISSION) as total_income
+                FROM payroll_Queue_Archive 
+                WHERE YEAR(Wire_Date) = YEAR(GETDATE())
+                  AND (BuyerID > 0 OR ListingID > 0);
+                """
+            if "how many agents" in q or "agent count" in q:
+                return """
+                SELECT COUNT(DISTINCT USER_ID) as agent_count
+                FROM TBL_USER_CREATE
+                WHERE USTATUS = 1 
+                  AND UTYPE_ID = 14;
                 """
         
         return None  # No cached query found
@@ -326,8 +352,10 @@ SQL Query:"""
                             return f"Hi {user_name.split()[0]}! You haven't closed any deals this year yet. Keep pushing!"
                         else:
                             return f"Hi {user_name.split()[0]}! You've closed {value:,} deal{'s' if value != 1 else ''} this year. Excellent work!"
-                    elif "agent" in question_lower and user_type == "broker":
+                    elif "agent" in question_lower and user_type in ["broker", "managingbroker"]:
                         return f"Hi {user_name.split()[0]}! You have {value:,} active agent{'s' if value != 1 else ''} in your team."
+                    elif "agent" in question_lower and user_type == "admin":
+                        return f"Hi {user_name.split()[0]}! There are {value:,} active agent{'s' if value != 1 else ''} in the system."
         
         # Handle "who" questions
         if "who" in question_lower and len(data) > 0:
