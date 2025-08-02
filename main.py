@@ -373,19 +373,20 @@ async def elevenlabs_conversation_initiation(request: Request):
                 }
                 log.info(f"Caller identified: {response_data['caller_name']} (ID: {response_data['caller_id']})")
             else:
+                # Use a default test agent ID when caller not found
                 response_data = {
-                    "caller_name": "Real Estate Agent",
-                    "caller_id": "unknown",
+                    "caller_name": "Guest Agent",
+                    "caller_id": "129814",  # Default to Genesis Lopez for testing
                     "caller_phone": caller_phone,
                     "agent_found": "false"
                 }
-                log.info(f"Caller not found in database: {caller_phone}")
+                log.info(f"Caller not found in database: {caller_phone} - using default ID 129814")
                 
         except Exception as e:
             log.error(f"Database lookup failed for {caller_phone}: {e}")
             response_data = {
-                "caller_name": "Real Estate Agent",
-                "caller_id": "unknown", 
+                "caller_name": "Guest Agent",
+                "caller_id": "129814",  # Default to Genesis Lopez for testing
                 "caller_phone": caller_phone,
                 "agent_found": "false"
             }
@@ -395,8 +396,8 @@ async def elevenlabs_conversation_initiation(request: Request):
     except Exception as e:
         log.error(f"Conversation initiation webhook error: {e}")
         return {
-            "caller_name": "Real Estate Agent",
-            "caller_id": "unknown",
+            "caller_name": "Guest Agent",
+            "caller_id": "129814",  # Default to Genesis Lopez for testing
             "caller_phone": "unknown",
             "agent_found": "false"
         }
