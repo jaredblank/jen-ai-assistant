@@ -188,7 +188,8 @@ class TwilioService:
             
             log.info(f"Voice call from {from_number}, status: {call_status}")
             
-            if call_status == 'in-progress' and not speech_result:
+            # For debugging - handle initial calls (no speech result)
+            if not speech_result:
                 # Initial call - ask for input
                 greeting = """Hi! I'm Jen, your AI assistant for real estate data. 
                 I can help you with questions about your income, deals, and performance. 
