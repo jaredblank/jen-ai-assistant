@@ -354,29 +354,48 @@ async def analytics_dashboard():
 
 @app.post("/twilio/voice")
 async def twilio_voice_webhook(request: Request):
-    """Handle incoming Twilio voice calls"""
+    """Handle incoming Twilio voice calls - redirect to ElevenLabs like Rachel"""
     try:
         form_data = await request.form()
-        webhook_data = dict(form_data)
+        from_number = form_data.get("From", "")
+        to_number = form_data.get("To", "")
+        call_sid = form_data.get("CallSid", "")
         
-        log.info(f"Twilio voice webhook: {webhook_data}")
+        log.info(f"Twilio voice call from {from_number} to {to_number}, CallSid: {call_sid}")
         
-        # Process through Twilio service
-        result = await twilio_service.process_webhook(webhook_data)
+        # Try to identify caller from database
+        caller_name = "Real Estate Agent"  # Default
+        caller_id = None
         
-        # Return TwiML response
-        if 'twiml' in result:
-            return PlainTextResponse(result['twiml'], media_type="application/xml")
-        else:
-            # Fallback TwiML
-            return PlainTextResponse(
-                twilio_service.create_voice_response("Sorry, I'm experiencing technical difficulties."),
-                media_type="application/xml"
-            )
+        try:
+            # Simple phone number lookup
+            user_info = await db_service.get_user_by_phone(from_number.replace("+1", "").replace("-", "").replace(" ", ""))
+            if user_info:
+                caller_name = user_info.get("name", "Real Estate Agent")
+                caller_id = str(user_info.get("id", ""))
+                log.info(f"Identified caller: {caller_name} (ID: {caller_id})")
+        except Exception as e:
+            log.warning(f"Could not identify caller {from_number}: {e}")
+        
+        # Create ElevenLabs redirect URL with caller context
+        elevenlabs_url = f"https://api.us.elevenlabs.io/twilio/inbound_call?caller_name={caller_name.replace(' ', '+')}&caller_id={caller_id or 'unknown'}"
+        
+        # Return TwiML redirect to ElevenLabs (same pattern as Rachel)
+        twiml_response = f'''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Redirect method="POST">{elevenlabs_url}</Redirect>
+</Response>'''
+        
+        return PlainTextResponse(twiml_response, media_type="application/xml")
         
     except Exception as e:
         log.error(f"Twilio voice webhook error: {e}")
-        fallback_twiml = twilio_service.create_voice_response("Sorry, I'm experiencing technical difficulties.")
+        
+        # Fallback: redirect to ElevenLabs without caller identification  
+        fallback_twiml = '''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Redirect method="POST">https://api.us.elevenlabs.io/twilio/inbound_call</Redirect>
+</Response>'''
         return PlainTextResponse(fallback_twiml, media_type="application/xml")
 
 @app.post("/twilio/sms")

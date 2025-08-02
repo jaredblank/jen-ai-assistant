@@ -98,6 +98,55 @@ class DatabaseService:
             log.error(f"Params: {params}")
             raise
     
+    async def get_user_by_phone(self, phone_number: str) -> Optional[Dict[str, Any]]:
+        """Get user by phone number for caller identification"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            
+            # Clean phone number (remove common formatting)
+            clean_phone = phone_number.replace("+", "").replace("-", "").replace(" ", "").replace("(", "").replace(")", "")
+            
+            # Search for user with this phone number
+            query = """
+                SELECT TOP 1 
+                    u.User_ID as id,
+                    u.User_Fname + ' ' + u.User_Lname as name,
+                    u.User_Phone as phone,
+                    u.User_Cell as cell,
+                    u.User_Email as email
+                FROM TBL_USER_CREATE u
+                WHERE u.User_Status = 'A' 
+                AND (
+                    REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(u.User_Phone, '+', ''), '-', ''), ' ', ''), '(', ''), ')', '') LIKE '%' + ? + '%'
+                    OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(u.User_Cell, '+', ''), '-', ''), ' ', ''), '(', ''), ')', '') LIKE '%' + ? + '%'
+                )
+            """
+            
+            cursor.execute(query, (clean_phone, clean_phone))
+            row = cursor.fetchone()
+            
+            if row:
+                user_data = {
+                    "id": row.id,
+                    "name": row.name,
+                    "phone": row.phone,
+                    "cell": row.cell,
+                    "email": row.email
+                }
+                log.info(f"Found user by phone {phone_number}: {user_data['name']} (ID: {user_data['id']})")
+                return user_data
+            else:
+                log.info(f"No user found with phone number: {phone_number}")
+                return None
+                
+        except Exception as e:
+            log.error(f"Phone lookup failed for {phone_number}: {e}")
+            return None
+        finally:
+            if 'conn' in locals():
+                conn.close()
+
     async def get_user_info(self, user_id: str) -> Optional[Dict[str, Any]]:
         """Get user information by ID"""
         try:
